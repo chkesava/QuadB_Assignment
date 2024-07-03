@@ -1,0 +1,11 @@
+.main-con{
+    background: linear-gradient(135deg, #afcbe9 0%, #20C997 30%, #7534dc 60%, #6C757D 90%, #FFFFFF 100%);
+    border-radius: 10px;
+    padding: 20px;
+    width: 90%;
+    color: black;
+}
+.title{
+    color: black
+    ;
+}

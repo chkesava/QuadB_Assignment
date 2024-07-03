@@ -2,15 +2,18 @@
 import React from 'react';
 import { Container, Text, Title, ActionIcon, Card, Group, Checkbox } from '@mantine/core';
 import { Trash, Edit } from 'tabler-icons-react';
+import './style.css'
+
 
 const TaskList = ({ tasks, deleteTask, toggleComplete, editTask }) => {
   return (
-    <Container size={550} my={40}>
+    <Container size={550} my={40} className='main-con'>
       <Group position="apart">
-        <Title
+        <Title 
           sx={(theme) => ({
             fontFamily: `Greycliff CF, ${theme.fontFamily}`,
             fontWeight: 900,
+        
           })}
         >
           My Tasks
@@ -59,7 +62,7 @@ const TaskList = ({ tasks, deleteTask, toggleComplete, editTask }) => {
             </Card>
           ))
         ) : (
-          <Text size="lg" mt="md" color="dimmed">
+          <Text size="lg" mt="md" className='title'>
             You have no tasks
           </Text>
         )}
