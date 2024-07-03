@@ -1,199 +1,213 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Routes, Route, BrowserRouter } from 'react-router-dom';
 import {
-	Button,
-	Container,
-	Text,
-	Title,
-	Modal,
-	TextInput,
-	Group,
-	Card,
-	ActionIcon,
-	Code,
+  Button,
+  Modal,
+  TextInput,
+  Group,
+  Select,
+  ActionIcon,
 } from '@mantine/core';
-import { useState, useRef, useEffect } from 'react';
-import { MoonStars, Sun, Trash } from 'tabler-icons-react';
-
-import {
-	MantineProvider,
-	ColorSchemeProvider,
-	ColorScheme,
-} from '@mantine/core';
-import { useColorScheme } from '@mantine/hooks';
+import { MoonStars, Sun, } from 'tabler-icons-react';
+import { MantineProvider, ColorSchemeProvider } from '@mantine/core';
 import { useHotkeys, useLocalStorage } from '@mantine/hooks';
+import TaskList from './TaskList';
 
-export default function App() {
-	const [tasks, setTasks] = useState([]);
-	const [opened, setOpened] = useState(false);
 
-	const preferredColorScheme = useColorScheme();
-	const [colorScheme, setColorScheme] = useLocalStorage({
-		key: 'mantine-color-scheme',
-		defaultValue: 'light',
-		getInitialValueInEffect: true,
-	});
-	const toggleColorScheme = value =>
-		setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
+const tagOptions = [
+  { value: 'health', label: 'Health' },
+  { value: 'education', label: 'Education' },
+  { value: 'entertainment', label: 'Entertainment' },
+  { value: 'sports', label: 'Sports' },
+  { value: 'travel', label: 'Travel' },
+  { value: 'others', label: 'Others' },
+];
 
-	useHotkeys([['mod+J', () => toggleColorScheme()]]);
+const App = () => {
+  const [tasks, setTasks] = useState([]);
+  const [opened, setOpened] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [selectedTag, setSelectedTag] = useState('');
 
-	const taskTitle = useRef('');
-	const taskSummary = useRef('');
+  const [colorScheme, setColorScheme] = useLocalStorage({
+    key: 'mantine-color-scheme',
+    defaultValue: 'light',
+    getInitialValueInEffect: true,
+  });
+  const toggleColorScheme = (value) =>
+    setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
 
-	function createTask() {
-		setTasks([
-			...tasks,
-			{
-				title: taskTitle.current.value,
-				summary: taskSummary.current.value,
-			},
-		]);
+  useHotkeys([['mod+J', () => toggleColorScheme()]]);
 
-		saveTasks([
-			...tasks,
-			{
-				title: taskTitle.current.value,
-				summary: taskSummary.current.value,
-			},
-		]);
-	}
+  const taskTitle = useRef('');
+  const taskSummary = useRef('');
 
-	function deleteTask(index) {
-		var clonedTasks = [...tasks];
+  function createTask() {
+    const newTasks = [
+      ...tasks,
+      {
+        title: taskTitle.current.value,
+        summary: taskSummary.current.value,
+        completed: false,
+        tag: selectedTag,
+      },
+    ];
+    setTasks(newTasks);
+    saveTasks(newTasks);
+    taskTitle.current.value = '';
+    taskSummary.current.value = '';
+    setSelectedTag('');
+    setOpened(false);
+  }
 
-		clonedTasks.splice(index, 1);
+  function updateTask() {
+    const updatedTasks = tasks.map((task, index) => {
+      if (index === editingTask.index) {
+        return {
+          ...task,
+          title: taskTitle.current.value,
+          summary: taskSummary.current.value,
+          tag: selectedTag,
+        };
+      }
+      return task;
+    });
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
+    setEditingTask(null);
+    taskTitle.current.value = '';
+    taskSummary.current.value = '';
+    setSelectedTag('');
+    setOpened(false);
+  }
 
-		setTasks(clonedTasks);
+  function deleteTask(index) {
+    const clonedTasks = [...tasks];
+    clonedTasks.splice(index, 1);
+    setTasks(clonedTasks);
+    saveTasks(clonedTasks);
+  }
 
-		saveTasks([...clonedTasks]);
-	}
+  function toggleComplete(index) {
+    const updatedTasks = tasks.map((task, i) => {
+      if (i === index) {
+        return { ...task, completed: !task.completed };
+      }
+      return task;
+    });
+    setTasks(updatedTasks);
+    saveTasks(updatedTasks);
+  }
 
-	function loadTasks() {
-		let loadedTasks = localStorage.getItem('tasks');
+  function loadTasks() {
+    const loadedTasks = localStorage.getItem('tasks');
+    const tasks = JSON.parse(loadedTasks);
+    if (tasks) {
+      setTasks(tasks);
+    }
+  }
 
-		let tasks = JSON.parse(loadedTasks);
+  function saveTasks(tasks) {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }
 
-		if (tasks) {
-			setTasks(tasks);
-		}
-	}
+  useEffect(() => {
+    loadTasks();
+  }, []);
 
-	function saveTasks(tasks) {
-		localStorage.setItem('tasks', JSON.stringify(tasks));
-	}
+  return (
+    <ColorSchemeProvider colorScheme={colorScheme} toggleColorScheme={toggleColorScheme}>
+      <MantineProvider theme={{ colorScheme, defaultRadius: 'md' }} withGlobalStyles withNormalizeCSS>
+        <BrowserRouter>
+		  <div style={{ display:'flex',marginTop:'30px',justifyContent:'end', margin:'30px' }}>
+		  <ActionIcon
+              variant="outline"
+              onClick={() => toggleColorScheme()}
+              title="Toggle color scheme"
+            >
+              {colorScheme === 'dark' ? <Sun size={50} /> : <MoonStars size={25} />}
+            </ActionIcon>
+          </div>
+          <Routes>
+            <Route
+              path="//todo_react_app"
+              element={
+                <div>
+                  <TaskList
+                    tasks={tasks}
+                    deleteTask={deleteTask}
+                    toggleComplete={toggleComplete}
+                    editTask={(task, index) => {
+                      setEditingTask({ task, index });
+                      setOpened(true);
+                      setSelectedTag(task.tag || '');
+                    }}
+                  />
+                  <Button
+                    onClick={() => {
+                      setOpened(true);
+                    }}
+                    fullWidth
+                    mt="md"
+                    style={{ 
+                      display: 'block', 
+                      margin: '0 auto', 
+                      width: '200px' // adjust the width as needed 
+                    }}
+                  >
+                    New Task
+                  </Button>
+                </div>
+              }
+            />
+            <Route path="/tasks/:taskId" element={<div>Task Details Placeholder</div>} />
+          </Routes>
+          <Modal
+            opened={opened}
+            size="md"
+            title={editingTask ? 'Edit Task' : 'New Task'}
+            withCloseButton={false}
+            onClose={() => {
+              setOpened(false);
+              setEditingTask(null);
+            }}
+            centered
+          >
+            <TextInput
+              mt="md"
+              ref={taskTitle}
+              placeholder="Task Title"
+              required
+              label="Title"
+              defaultValue={editingTask ? editingTask.task.title : ''}
+            />
+            <TextInput
+              ref={taskSummary}
+              mt="md"
+              placeholder="Task Summary"
+              label="Summary"
+              defaultValue={editingTask ? editingTask.task.summary : ''}
+            />
+            <Select
+              mt="md"
+              data={tagOptions}
+              value={selectedTag}
+              onChange={(value) => setSelectedTag(value)}
+              placeholder="Select Tag"
+            />
+            <Group mt="md" position="apart">
+              <Button onClick={() => { setOpened(false); setEditingTask(null); }} variant="subtle">
+                Cancel
+              </Button>
+              <Button onClick={() => { editingTask ? updateTask() : createTask(); }}>
+                {editingTask ? 'Update Task' : 'Create Task'}
+              </Button>
+            </Group>
+          </Modal>
+        </BrowserRouter>
+      </MantineProvider>
+    </ColorSchemeProvider>
+  );
+};
 
-	useEffect(() => {
-		loadTasks();
-	}, []);
-
-	return (
-		<ColorSchemeProvider
-			colorScheme={colorScheme}
-			toggleColorScheme={toggleColorScheme}>
-			<MantineProvider
-				theme={{ colorScheme, defaultRadius: 'md' }}
-				withGlobalStyles
-				withNormalizeCSS>
-				<div className='App'>
-					<Modal
-						opened={opened}
-						size={'md'}
-						title={'New Task'}
-						withCloseButton={false}
-						onClose={() => {
-							setOpened(false);
-						}}
-						centered>
-						<TextInput
-							mt={'md'}
-							ref={taskTitle}
-							placeholder={'Task Title'}
-							required
-							label={'Title'}
-						/>
-						<TextInput
-							ref={taskSummary}
-							mt={'md'}
-							placeholder={'Task Summary'}
-							label={'Summary'}
-						/>
-						<Group mt={'md'} position={'apart'}>
-							<Button
-								onClick={() => {
-									setOpened(false);
-								}}
-								variant={'subtle'}>
-								Cancel
-							</Button>
-							<Button
-								onClick={() => {
-									createTask();
-									setOpened(false);
-								}}>
-								Create Task
-							</Button>
-						</Group>
-					</Modal>
-					<Container size={550} my={40}>
-						<Group position={'apart'}>
-							<Title
-								sx={theme => ({
-									fontFamily: `Greycliff CF, ${theme.fontFamily}`,
-									fontWeight: 900,
-								})}>
-								My Tasks
-							</Title>
-							<ActionIcon
-								color={'blue'}
-								onClick={() => toggleColorScheme()}
-								size='lg'>
-								{colorScheme === 'dark' ? (
-									<Sun size={16} />
-								) : (
-									<MoonStars size={16} />
-								)}
-							</ActionIcon>
-						</Group>
-						{tasks.length > 0 ? (
-							tasks.map((task, index) => {
-								if (task.title) {
-									return (
-										<Card withBorder key={index} mt={'sm'}>
-											<Group position={'apart'}>
-												<Text weight={'bold'}>{task.title}</Text>
-												<ActionIcon
-													onClick={() => {
-														deleteTask(index);
-													}}
-													color={'red'}
-													variant={'transparent'}>
-													<Trash />
-												</ActionIcon>
-											</Group>
-											<Text color={'dimmed'} size={'md'} mt={'sm'}>
-												{task.summary
-													? task.summary
-													: 'No summary was provided for this task'}
-											</Text>
-										</Card>
-									);
-								}
-							})
-						) : (
-							<Text size={'lg'} mt={'md'} color={'dimmed'}>
-								You have no tasks
-							</Text>
-						)}
-						<Button
-							onClick={() => {
-								setOpened(true);
-							}}
-							fullWidth
-							mt={'md'}>
-							New Task
-						</Button>
-					</Container>
-				</div>
-			</MantineProvider>
-		</ColorSchemeProvider>
-	);
-}
+export default App;
