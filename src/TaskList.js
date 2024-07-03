@@ -53,7 +53,9 @@ const TaskList = ({ tasks, deleteTask, toggleComplete, editTask }) => {
                 checked={task.completed}
                 onChange={() => toggleComplete(index)}
               />
-              {/* Display tag if needed */}
+              {
+                <p>tag : {task.tag}</p>
+              }
             </Card>
           ))
         ) : (

@@ -130,7 +130,7 @@ const App = () => {
           </div>
           <Routes>
             <Route
-              path="//todo_react_app"
+              path="/"
               element={
                 <div>
                   <TaskList
